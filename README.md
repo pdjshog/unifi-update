@@ -1,20 +1,109 @@
-# Ubiquti docker container for updating divices
+# Docker-контейнер для обновления устройств Ubiquiti/UniFi
 
-это не метод обхода блокировок ркн, ибо ркн не блокирует трафик к unifi серверам. это метод существования с их ошибками
+## Описание
+
+Этот проект предоставляет легковесный Docker-контейнер на основе Angie (форк Nginx), который решает проблему с обновлением устройств Ubiquiti/UniFi в регионах, где возникают проблемы с доступом к официальным серверам обновлений.
+
+**Важно:** Это не метод обхода блокировок РКН, поскольку РКН не блокирует трафик к серверам UniFi. Это решение для работы с ошибками сети и проблемами доступности серверов обновлений.
+
+## Как это работает
+
+Контейнер выступает в роли SSL/TLS прокси-сервера, который:
+1. Принимает HTTPS-запросы от устройств Ubiquiti на порт 443
+2. Определяет целевой домен через SNI (Server Name Indication)
+3. Проксирует запросы на соответствующие официальные серверы обновлений
+4. Возвращает ответы обратно устройствам
+
+## Настройка
+
+### 1. Развертывание контейнера
+
+`docker compose up -d`
 
 
-пропишите в настройках dns вашей консоли 
+### 2. Настройка DNS на устройствах Ubiquiti
 
-{ip-of-vps} fw-download.ubnt.com
+В настройках DNS вашей консоли UniFi или на маршрутизаторе добавьте следующие записи, заменив `{ip-of-vps}` на IP-адрес вашего сервера:
 
-{ip-of-vps}  fw-update.ubnt.com
+{ip-of-vps} fw-download.ubnt.com 
 
-{ip-of-vps}  apt.artifacts.ui.com
+{ip-of-vps} fw-update.ubnt.com 
 
-{ip-of-vps}  apt-release-candidate.artifacts.ui.com
+{ip-of-vps} apt.artifacts.ui.com 
 
-{ip-of-vps} apt-beta.artifacts.ui.com
+{ip-of-vps} apt-release-candidate.artifacts.ui.com 
 
-{ip-of-vps}  fw-update.ui.com
+{ip-of-vps} apt-beta.artifacts.ui.com 
+
+{ip-of-vps} fw-update.ui.com
 
 
+### 3. Проверка работы
+
+После настройки DNS устройства Ubiquiti будут направлять запросы обновлений на ваш прокси-сервер, который перенаправит их на официальные серверы.
+
+## Конфигурация
+
+### Файлы проекта
+
+- `docker-compose.yml` - конфигурация Docker Compose
+- `angie.conf` - основная конфигурация Angie
+- `ubnt.conf` - конфигурация прокси для серверов Ubiquiti
+- `logs/` - директория для логов
+
+### Поддерживаемые домены
+
+Прокси поддерживает следующие домены Ubiquiti:
+- `fw-download.ubnt.com`
+- `fw-update.ubnt.com`
+- `apt.artifacts.ui.com`
+- `apt-release-candidate.artifacts.ui.com`
+- `apt-beta.artifacts.ui.com`
+- `fw-update.ui.com`
+- `static.ui.com`
+
+## Мониторинг
+
+Логи доступны в директории `logs/`:
+- `tcp.log` - логи TCP-проксирования
+- `access.log` - HTTP-логи
+- `error.log` - логи ошибок
+
+## Требования
+
+- Docker и Docker Compose
+- Сервер с публичным IP-адресом
+- Открытый порт 443 на сервере
+
+## Безопасность
+
+- Контейнер использует только официальные образы Angie
+- Все конфигурационные файлы монтируются в режиме только для чтения
+- Используются стандартные DNS-резолверы (Cloudflare и Google)
+
+## Устранение неполадок
+
+1. **Проверьте, что контейнер запущен:**
+   ```bash
+   docker-compose ps
+   ```
+
+2. **Просмотрите логи:**
+   ```bash
+   docker-compose logs angie
+   ```
+
+3. **Проверьте доступность порта 443:**
+   ```bash
+   netstat -tlnp | grep 443
+   ```
+
+4. **Проверьте DNS-записи:**
+   ```bash
+   dig fw-download.ubnt.com @{ip-of-vps}
+   ```
+
+
+## Поддержка
+
+Если у вас возникли проблемы или вопросы, создайте issue в репозитории проекта.
