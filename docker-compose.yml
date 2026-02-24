@@ -2,15 +2,15 @@ version: '3.8'
 
 services:
   angie:
-    image: docker.angie.software/angie:latest # Лёгкий образ на основе Alpine Linux
+    image: docker.angie.software/angie:latest
     container_name: angie-stream-proxy
     restart: unless-stopped
     ports:
-      - "443:443"                 # Проксируем порт 443 хоста в контейнер
+      - "443:443" # Проксируем порт 443 хоста в контейнер
     volumes:
       - ./angie.conf:/etc/angie/angie.conf:ro
-      - ./ubnt.conf:/etc/angie/stream.d/ubnt.conf    # Монтируем конфиг (только чтение)
-      - ./logs:/var/log/nginx                    # Логи будут сохраняться локально
+      - ./ubnt.conf:/etc/angie/stream.d/ubnt.conf:ro    
+      - ./logs:/var/log/nginx  # Логи будут сохраняться локально
     logging:
       driver: "json-file"
       options:
